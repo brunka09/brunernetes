@@ -1,0 +1,35 @@
+apiVersion: bruner.dev/v1alpha1
+kind: BrunerApp
+metadata:
+  name: factory-showroom
+  namespace: showroom
+  labels:
+    app.kubernetes.io/part-of: brunernetes
+    bruner.dev/factory: togliatti
+spec:
+  image: ghcr.io/brunernetes/factory-showroom:v0.1.0
+  port: 8080
+  replicas: 1
+  brunerMode:
+    profile: showroom
+    rollout: steady
+    qualityGate: practical
+    shift: day
+  exposure:
+    type: Localhost
+    port: 18080
+  health:
+    path: /healthz
+    initialDelaySeconds: 2
+    periodSeconds: 5
+    timeoutSeconds: 2
+    failureThreshold: 6
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+  rollout:
+    strategy: RollingUpdate
