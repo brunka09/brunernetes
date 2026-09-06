@@ -1,0 +1,23 @@
+domain: dev
+layout:
+- go.kubebuilder.io/v4
+projectName: brunernetes
+repo: github.com/brunka09/brunernetes
+resources:
+- crdVersion: v1
+  group: bruner.dev
+  kind: Togliatti
+  version: v1alpha1
+- crdVersion: v1
+  group: bruner.dev
+  kind: AvtoVAZ
+  version: v1alpha1
+- crdVersion: v1
+  group: bruner.dev
+  kind: BrunerApp
+  version: v1alpha1
+- crdVersion: v1
+  group: bruner.dev
+  kind: Konveer
+  version: v1alpha1
+version: "3-alpha"

@@ -1,0 +1,14 @@
+# Binaries
+bin/
+coverage.out
+*.test
+
+# Generated test assets
+.testbin/
+
+# IDEs
+.idea/
+.vscode/
+
+# OS files
+.DS_Store
