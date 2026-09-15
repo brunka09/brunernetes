@@ -114,10 +114,16 @@ case "$endpoint" in
   *) fail "The reported endpoint must be on the loopback address, but it is '$endpoint'." ;;
 esac
 
+step "Letting the first rollout settle"
+# The pod carries a host port, so a replacement pod cannot be scheduled while
+# the previous one still holds it. Waiting here keeps the next step honest.
+kubectl -n "$DEMO_NAMESPACE" rollout status deployment/smoke --timeout=180s || true
+
 step "Checking that an image change reaches the Deployment"
 kubectl -n "$DEMO_NAMESPACE" patch brunerapp smoke --type=merge \
   -p '{"spec":{"image":"registry.k8s.io/e2e-test-images/agnhost:2.48"}}'
-for _ in $(seq 1 30); do
+current=""
+for _ in $(seq 1 60); do
   current=$(kubectl -n "$DEMO_NAMESPACE" get deployment smoke -o jsonpath='{.spec.template.spec.containers[0].image}')
   [ "$current" = "registry.k8s.io/e2e-test-images/agnhost:2.48" ] && break
   sleep 2

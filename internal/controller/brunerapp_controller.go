@@ -109,6 +109,13 @@ func (r *BrunerAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	// 2. Apply the Deployment.
 	deployment, deploymentOp, err := r.reconcileDeployment(ctx, app, mode)
+	if apierrors.IsConflict(err) {
+		// Another writer updated the Deployment between the read and the
+		// write. This is normal optimistic concurrency, not a fault: reconcile
+		// again with the new version instead of reporting a problem.
+		logger.V(1).Info("the Deployment changed while it was being applied, retrying")
+		return ctrl.Result{Requeue: true}, nil
+	}
 	if err != nil {
 		message := fmt.Sprintf(
 			"Deployment could not be applied: %v. Check controller permissions and the API server. The assembly order was rejected.",
@@ -124,6 +131,10 @@ func (r *BrunerAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	// 3. Apply the Service.
 	service, serviceOp, err := r.reconcileService(ctx, app, mode)
+	if apierrors.IsConflict(err) {
+		logger.V(1).Info("the Service changed while it was being applied, retrying")
+		return ctrl.Result{Requeue: true}, nil
+	}
 	if err != nil {
 		message := fmt.Sprintf(
 			"Service could not be applied: %v. Check controller permissions and the API server. The delivery bay could not be opened.",

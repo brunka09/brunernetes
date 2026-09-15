@@ -116,18 +116,34 @@ jobs:
         run: diff -r config/crd/bases charts/brunernetes/crds
 
   manifests:
-    name: Manifests apply cleanly
+    name: Manifests are valid Kubernetes objects
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.16.3
+
       - name: Install kubeconform
         run: |
           curl -sSfL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz \
-            | tar -xz -C /usr/local/bin kubeconform
+            | sudo tar -xz -C /usr/local/bin kubeconform
 
-      - name: Validate the CRDs themselves
-        run: kubeconform -strict -summary config/crd/bases
+      # The custom resources themselves are validated against a real API server
+      # by the envtest job, which applies every file in config/samples and
+      # demo/manifests. This job checks the objects with an upstream schema: the
+      # CRDs and everything the chart renders.
+      - name: Validate the custom resource definitions
+        run: kubeconform -strict -summary -kubernetes-version 1.32.0 -ignore-missing-schemas config/crd/bases
+
+      - name: Validate the rendered chart
+        run: |
+          helm template brunernetes charts/brunernetes \
+            --namespace brunernetes-system \
+            --set factory.togliatti.create=true \
+            --set factory.avtovaz.create=true \
+            | kubeconform -strict -summary -kubernetes-version 1.32.0 -ignore-missing-schemas -
 
   shell:
     name: Shell scripts
