@@ -85,9 +85,10 @@ metadata:
   name: smoke
   namespace: $DEMO_NAMESPACE
 spec:
-  image: registry.k8s.io/e2e-test-images/agnhost:2.47
+  image: ghcr.io/nginxinc/nginx-unprivileged:1.27-alpine
   port: 8080
   replicas: 1
+  healthPath: /
 EOF
 
 step "Waiting for the controller to build the workload"
@@ -117,40 +118,48 @@ esac
 step "Letting the first rollout settle"
 # The pod carries a host port, so a replacement pod cannot be scheduled while
 # the previous one still holds it. Waiting here keeps the next step honest.
-kubectl -n "$DEMO_NAMESPACE" rollout status deployment/smoke --timeout=180s || true
+kubectl -n "$DEMO_NAMESPACE" rollout status deployment/smoke --timeout=180s
 
 step "Checking that an image change reaches the Deployment"
 kubectl -n "$DEMO_NAMESPACE" patch brunerapp smoke --type=merge \
-  -p '{"spec":{"image":"registry.k8s.io/e2e-test-images/agnhost:2.48"}}'
+  -p '{"spec":{"image":"ghcr.io/nginxinc/nginx-unprivileged:1.27"}}'
 current=""
 for _ in $(seq 1 60); do
   current=$(kubectl -n "$DEMO_NAMESPACE" get deployment smoke -o jsonpath='{.spec.template.spec.containers[0].image}')
-  [ "$current" = "registry.k8s.io/e2e-test-images/agnhost:2.48" ] && break
+  [ "$current" = "ghcr.io/nginxinc/nginx-unprivileged:1.27" ] && break
   sleep 2
 done
-[ "$current" = "registry.k8s.io/e2e-test-images/agnhost:2.48" ] \
+[ "$current" = "ghcr.io/nginxinc/nginx-unprivileged:1.27" ] \
   || fail "The image change never reached the Deployment."
 
-step "Checking that public exposure is refused"
-cat <<EOF | kubectl apply -f -
+step "Checking that the API server refuses a non loopback host address"
+# The CRD pattern is the only validation layer in this design, so this is the
+# check that keeps the distribution loopback only.
+if cat <<EOF | kubectl apply -f - 2>/dev/null
 apiVersion: bruner.dev/v1alpha1
 kind: BrunerApp
 metadata:
   name: public-attempt
   namespace: $DEMO_NAMESPACE
 spec:
-  image: registry.k8s.io/e2e-test-images/agnhost:2.47
+  image: ghcr.io/nginxinc/nginx-unprivileged:1.27-alpine
   port: 8080
+  healthPath: /
   localExposure:
     enabled: true
     hostIP: 0.0.0.0
-    hostPort: 30080
+    hostPort: 30081
 EOF
-sleep 10
-host_ip=$(kubectl -n "$DEMO_NAMESPACE" get deployment public-attempt \
-  -o jsonpath='{.spec.template.spec.containers[0].ports[0].hostIP}' 2>/dev/null || true)
-[ "$host_ip" = "127.0.0.1" ] \
-  || fail "A non loopback host address must be normalised to 127.0.0.1, but it is '$host_ip'."
+then
+  kubectl -n "$DEMO_NAMESPACE" delete brunerapp public-attempt --ignore-not-found
+  fail "The API server accepted a host address outside 127.0.0.0/8."
+fi
+echo "The API server rejected the manifest, which is the expected result."
+
+step "Checking that the Service stays a ClusterIP Service"
+service_count=$(kubectl -n "$DEMO_NAMESPACE" get services -o jsonpath='{range .items[*]}{.spec.type}{"\n"}{end}' | sort -u)
+[ "$service_count" = "ClusterIP" ] \
+  || fail "Only ClusterIP Services may exist, but these types were found: $service_count"
 
 step "Deleting the application"
 kubectl -n "$DEMO_NAMESPACE" delete brunerapp smoke --wait=true
