@@ -1,0 +1,47 @@
+# Delivery of the Factory Showroom image to the demo application.
+#
+# The workflow validates the image reference and the AvtoVAZ policy, applies
+# the image to the BrunerApp named in spec.appRef, waits for the Deployment
+# rollout and for readiness, and then requests /healthz on the loopback
+# endpoint. It never builds an image: the reference must already exist.
+#
+# In v0.1 the four stages are executed client-side by brunerctl, which writes
+# the phase, the per-stage results and the conditions into this resource's
+# status. A Konveer reconciler is v0.2 work (docs/roadmap.md).
+#
+#   brunerctl konveer apply -f demo/manifests/konveer.yaml
+apiVersion: bruner.dev/v1alpha1
+kind: Konveer
+metadata:
+  name: factory-showroom-delivery
+  namespace: brunernetes-demo
+spec:
+  # The BrunerApp in this namespace that receives the image. It is created if
+  # it does not exist, which is why the appTemplate below repeats the
+  # application shape used in brunerapp.yaml.
+  appRef: factory-showroom
+  image: factory-showroom:0.1.0
+  appTemplate:
+    replicas: 1
+    port: 8080
+    healthPath: /healthz
+    mode:
+      profile: showroom
+      rollout: steady
+      qualityGate: practical
+      shift: day
+    localExposure:
+      enabled: true
+      hostIP: 127.0.0.1
+      hostPort: 30080
+  checks:
+    imageReference: true
+    policy: true
+    capacity: true
+  timeouts:
+    rolloutSeconds: 300
+    readinessSeconds: 180
+  verify:
+    enabled: true
+    path: /healthz
+    expectedStatus: 200

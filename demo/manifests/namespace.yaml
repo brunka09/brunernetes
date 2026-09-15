@@ -1,0 +1,13 @@
+# Namespace for the Factory Showroom demo application.
+#
+# The Brunernetes controller itself runs in "brunernetes-system" (installed by
+# the Helm chart); the demo workload is kept separate in "brunernetes-demo" so
+# that deleting the namespace removes the application and nothing else. The
+# name matches DemoNamespace in internal/cli/versions.go.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: brunernetes-demo
+  labels:
+    app.kubernetes.io/part-of: brunernetes
+    bruner.dev/factory: togliatti

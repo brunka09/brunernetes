@@ -1,0 +1,30 @@
+# Togliatti - the single-node factory environment (cluster-scoped).
+#
+# What this does: it declares which node hosts the factory and which
+# Kubernetes version and container runtime the installer produced, so the
+# observed environment can be compared against the expected one. The factory
+# floor itself: one node, one runtime, one pod network.
+#
+# Implementation status: no Togliatti reconciler exists in v0.1. The resource is
+# accepted and stored, and `brunerctl factory status` inspects the live node
+# directly. The reconciler is planned for v0.2 (docs/roadmap.md).
+#
+# Every field below is optional. Values match the installer defaults in
+# internal/cli/versions.go and internal/cli/install.go.
+apiVersion: bruner.dev/v1alpha1
+kind: Togliatti
+metadata:
+  name: togliatti
+spec:
+  # Leave empty to use the only node in the cluster.
+  nodeName: ""
+  # Capacity planning profile: compact (2 vCPU / 4 GiB), standard (4 vCPU /
+  # 8 GiB) or spacious. Omit to let the controller derive it from the node.
+  capacityProfile: compact
+  # How often the environment is re-checked, in seconds (10-3600).
+  probeIntervalSeconds: 60
+  # The pinned control-plane version the installer applies. A mismatch is
+  # reported, it does not stop the line.
+  expectedKubernetesVersion: v1.32.3
+  # containerd is the only supported runtime.
+  expectedRuntime: containerd

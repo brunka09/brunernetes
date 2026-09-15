@@ -1,0 +1,191 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  GO_VERSION: "1.24"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build and unit test
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Check formatting
+        run: make fmt-check
+
+      - name: Vet
+        run: make vet
+
+      - name: Unit tests
+        run: go test ./... -coverprofile=cover.out
+
+      - name: Coverage summary
+        run: go tool cover -func=cover.out | tail -20
+
+      - name: Build the binaries
+        run: make build
+
+      - name: Check that brunerctl starts
+        run: |
+          ./bin/brunerctl --help
+          ./bin/brunerctl version || true
+
+      - name: Check that the manager starts
+        run: ./bin/manager --version || true
+
+  generated:
+    name: Generated files are up to date
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Regenerate the deepcopy functions and the manifests
+        run: |
+          make generate
+          make manifests
+
+      - name: Fail when the checked in files differ
+        run: |
+          if ! git diff --exit-code; then
+            echo "The generated files are out of date. Run: make generate manifests"
+            exit 1
+          fi
+
+  envtest:
+    name: Controller tests against an API server
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Run the envtest suite
+        run: make test-envtest
+
+  chart:
+    name: Helm chart
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.16.3
+
+      - name: Lint the chart
+        run: helm lint charts/brunernetes
+
+      - name: Render the chart with the defaults
+        run: helm template brunernetes charts/brunernetes --namespace brunernetes-system
+
+      - name: Render the chart with the factory resources enabled
+        run: |
+          helm template brunernetes charts/brunernetes \
+            --namespace brunernetes-system \
+            --set factory.togliatti.create=true \
+            --set factory.avtovaz.create=true
+
+      - name: Check that the chart CRDs match the generated ones
+        run: diff -r config/crd/bases charts/brunernetes/crds
+
+  manifests:
+    name: Manifests apply cleanly
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install kubeconform
+        run: |
+          curl -sSfL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz \
+            | tar -xz -C /usr/local/bin kubeconform
+
+      - name: Validate the CRDs themselves
+        run: kubeconform -strict -summary config/crd/bases
+
+  shell:
+    name: Shell scripts
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run shellcheck
+        run: |
+          sudo apt-get update && sudo apt-get install -y shellcheck
+          shellcheck test/e2e/*.sh
+
+  image:
+    name: Container image
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build the controller image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: brunernetes:ci
+
+      - name: Build the demo image
+        uses: docker/build-push-action@v6
+        with:
+          context: demo/factory-showroom
+          push: false
+          load: true
+          tags: factory-showroom:ci
+
+  e2e:
+    name: kind smoke test
+    runs-on: ubuntu-24.04
+    needs: [build, chart]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - uses: helm/kind-action@v1
+        with:
+          install_only: true
+          version: v0.26.0
+
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.16.3
+
+      - name: Run the smoke test
+        run: ./test/e2e/kind-smoke.sh
+        env:
+          IMAGE: brunernetes:e2e

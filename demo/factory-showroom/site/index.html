@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Factory Showroom - Bruner, DevOps / Platform Engineer</title>
+<meta name="description" content="Factory Showroom: an animated assembly line CV and DevOps portfolio page. Static, offline capable demo application for Brunernetes.">
+<meta name="color-scheme" content="dark">
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="styles.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23121519'/%3E%3Cpath d='M5 21h22M9 21v-5l4-5h6l4 5v5' stroke='%23f5a524' stroke-width='2.4' fill='none' stroke-linejoin='round'/%3E%3Ccircle cx='12' cy='24' r='2.2' fill='%23ff6a1f'/%3E%3Ccircle cx='22' cy='24' r='2.2' fill='%23ff6a1f'/%3E%3C/svg%3E">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="brand" href="#top" aria-label="Factory Showroom, home">
+      <svg class="brand-mark" viewBox="0 0 40 40" role="img" aria-label="Factory Showroom logo: a car body over a conveyor line" focusable="false">
+        <rect x="1.5" y="1.5" width="37" height="37" rx="4" fill="none" stroke="currentColor" stroke-width="2"></rect>
+        <path d="M8 26h24" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+        <path d="M12 26v-6l4-5h8l4 5v6" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"></path>
+        <circle cx="16" cy="30" r="2.4" fill="currentColor"></circle>
+        <circle cx="26" cy="30" r="2.4" fill="currentColor"></circle>
+      </svg>
+      <span class="brand-text">
+        <strong>Factory Showroom</strong>
+        <span class="brand-sub" data-bind="meta.tagline">Assembly line for platform engineering</span>
+      </span>
+    </a>
+    <nav class="site-nav" aria-label="Section navigation">
+      <ul>
+        <li><a href="#line">Line</a></li>
+        <li><a href="#skills">Skills</a></li>
+        <li><a href="#experience">Experience</a></li>
+        <li><a href="#projects">Projects</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+  <noscript>
+    <p class="noscript">This page uses a small inline script to render the CV data and animate the assembly line. Content and layout still load, but the dynamic sections stay empty without JavaScript.</p>
+  </noscript>
+
+  <!-- HERO -->
+  <section class="hero" id="top" aria-labelledby="hero-title">
+    <div class="wrap hero-grid">
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="dot" aria-hidden="true"></span>Shift active - line status nominal</p>
+        <h1 id="hero-title">
+          <span class="hero-name" data-bind="person.name">Bruner</span>
+          <span class="hero-role" data-bind="person.role">DevOps / Platform Engineer</span>
+        </h1>
+        <p class="hero-summary" data-bind="person.summary"></p>
+        <ul class="hero-meta" aria-label="Availability details">
+          <li><span class="k">Location</span><span class="v" data-bind="person.location"></span></li>
+          <li><span class="k">Status</span><span class="v" data-bind="person.availability"></span></li>
+          <li><span class="k">Build</span><span class="v" data-bind="meta.version"></span></li>
+        </ul>
+        <p class="hero-actions">
+          <a class="btn btn-primary" href="#line">View the line</a>
+          <a class="btn btn-ghost" href="#contact">Contact</a>
+        </p>
+      </div>
+      <dl class="stats" id="stats" aria-label="Career statistics"></dl>
+    </div>
+    <div class="hazard-strip" aria-hidden="true"></div>
+  </section>
+
+  <!-- ASSEMBLY LINE -->
+  <section class="section line-section" id="line" aria-labelledby="line-title">
+    <div class="wrap">
+      <header class="section-head">
+        <p class="section-code">SEC-01</p>
+        <h2 id="line-title">Assembly line</h2>
+        <p class="section-lede">Four fixed stages. A car body enters at Inspection and leaves on the showroom floor. The same model describes how a change reaches production.</p>
+      </header>
+
+      <div class="line" id="line-widget">
+        <div class="line-viewport">
+          <div class="line-bays" aria-hidden="true">
+            <span></span><span></span><span></span><span></span>
+          </div>
+          <div class="line-gantry" aria-hidden="true">
+            <span class="lamp"></span><span class="lamp"></span><span class="lamp"></span><span class="lamp"></span>
+          </div>
+
+          <div class="line-rail" aria-hidden="true">
+            <div class="rail-belt"></div>
+            <div class="rail-ticks"></div>
+          </div>
+
+          <div class="car" id="car" aria-hidden="true">
+            <svg viewBox="0 0 160 78" class="car-svg" focusable="false">
+              <g class="car-sparks">
+                <circle cx="86" cy="16" r="2.2"></circle>
+                <circle cx="72" cy="10" r="1.6"></circle>
+                <circle cx="98" cy="12" r="1.4"></circle>
+              </g>
+              <path class="car-shell" d="M12 58h136V44c0-4-3-7-7-7h-15l-14-17c-2-3-5-4-8-4H62c-4 0-7 2-9 5L41 37H23c-6 0-11 4-11 10z"></path>
+              <path class="car-glass" d="M66 20h26l11 14H58z"></path>
+              <path class="car-line" d="M20 47h120" stroke-linecap="round"></path>
+              <circle class="wheel" cx="44" cy="60" r="12"></circle>
+              <circle class="wheel" cx="116" cy="60" r="12"></circle>
+              <circle class="hub" cx="44" cy="60" r="4.5"></circle>
+              <circle class="hub" cx="116" cy="60" r="4.5"></circle>
+            </svg>
+          </div>
+        </div>
+
+        <ol class="stages" id="stages" aria-label="Assembly line stages"></ol>
+
+        <div class="line-readout">
+          <p class="readout-row">
+            <span class="readout-label">Current stage</span>
+            <span class="readout-value" id="readout-stage" aria-live="polite">Inspection</span>
+          </p>
+          <p class="readout-row">
+            <span class="readout-label">Report</span>
+            <span class="readout-note" id="readout-note">Preflight checks, policy validation, image reference review.</span>
+          </p>
+          <p class="readout-row readout-controls">
+            <button class="btn btn-small" type="button" id="line-toggle" aria-pressed="false">Pause line</button>
+            <span class="readout-hint" id="line-hint">Motion respects your reduced-motion setting.</span>
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SKILLS -->
+  <section class="section" id="skills" aria-labelledby="skills-title">
+    <div class="wrap">
+      <header class="section-head">
+        <p class="section-code">SEC-02</p>
+        <h2 id="skills-title">Tooling and skills</h2>
+        <p class="section-lede">Placeholder levels, grouped by workstation. Edit them in <code>content.js</code>.</p>
+      </header>
+      <div class="skill-grid" id="skill-grid"></div>
+    </div>
+  </section>
+
+  <!-- EXPERIENCE -->
+  <section class="section" id="experience" aria-labelledby="experience-title">
+    <div class="wrap">
+      <header class="section-head">
+        <p class="section-code">SEC-03</p>
+        <h2 id="experience-title">Experience timeline</h2>
+        <p class="section-lede">Read bottom to top like a production record: each role is tagged with the stage it maps to.</p>
+      </header>
+      <ol class="timeline" id="timeline"></ol>
+    </div>
+  </section>
+
+  <!-- PROJECTS -->
+  <section class="section" id="projects" aria-labelledby="projects-title">
+    <div class="wrap">
+      <header class="section-head">
+        <p class="section-code">SEC-04</p>
+        <h2 id="projects-title">Projects</h2>
+        <p class="section-lede">Selected placeholder work items from the shop floor.</p>
+      </header>
+      <div class="project-grid" id="project-grid"></div>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section class="section contact-section" id="contact" aria-labelledby="contact-title">
+    <div class="wrap">
+      <header class="section-head">
+        <p class="section-code">SEC-05</p>
+        <h2 id="contact-title">Contact</h2>
+        <p class="section-lede" data-bind="contact.note"></p>
+      </header>
+      <dl class="contact-list" id="contact-list"></dl>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap footer-inner">
+    <p>Factory Showroom - demo application for Brunernetes. Static, self contained, no external requests.</p>
+    <p class="footer-meta"><span>Served by nginx on port 8080</span><span>Health endpoint: <code>/healthz</code></span></p>
+  </div>
+</footer>
+
+<script src="content.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

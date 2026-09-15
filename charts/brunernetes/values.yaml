@@ -1,0 +1,88 @@
+# Default values for the Brunernetes controller.
+#
+# The chart targets one single-node cluster. Every default is chosen for a small
+# host: one replica, modest requests, and no external exposure of any kind.
+
+image:
+  repository: ghcr.io/brunka09/brunernetes
+  # The tag defaults to the chart appVersion when it is left empty.
+  tag: ""
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+
+# The controller is a singleton. Running a second replica without leader
+# election would make two controllers fight over the same objects.
+replicaCount: 1
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+rbac:
+  # Create the ClusterRole and ClusterRoleBinding the controller needs.
+  create: true
+
+# The controller must run on the single control-plane node, which is also the
+# only node that runs workloads in this distribution.
+tolerations:
+  - key: node-role.kubernetes.io/control-plane
+    operator: Exists
+    effect: NoSchedule
+
+nodeSelector: {}
+affinity: {}
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 96Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+# Controller runtime settings.
+controller:
+  # Logging verbosity passed to the manager.
+  logLevel: info
+  # The address of the health probe endpoint inside the pod.
+  healthProbePort: 8081
+  # Metrics are bound to the loopback address of the pod by default, because
+  # this distribution never exposes anything beyond the node.
+  metricsBindAddress: "127.0.0.1:8080"
+  # Leader election is unnecessary with a single replica on a single node.
+  leaderElection: false
+
+# Optional factory resources created together with the controller. brunerctl
+# install applies these itself, so the chart leaves them off by default.
+factory:
+  togliatti:
+    create: false
+    name: togliatti
+    capacityProfile: compact
+  avtovaz:
+    create: false
+    name: avtovaz
+    profile: garage
+    qualityGate: practical
+    shift: day

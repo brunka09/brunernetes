@@ -1,0 +1,20 @@
+apiVersion: v2
+name: brunernetes
+description: The Brunernetes factory controller and its custom resource definitions for a single-node cluster.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+kubeVersion: ">=1.30.0-0"
+home: https://github.com/brunka09/brunernetes
+sources:
+  - https://github.com/brunka09/brunernetes
+keywords:
+  - kubernetes
+  - single-node
+  - operator
+  - delivery
+maintainers:
+  - name: brunka09
+    url: https://github.com/brunka09
+annotations:
+  bruner.dev/scope: "single-node"

@@ -1,0 +1,28 @@
+Brunernetes {{ .Chart.AppVersion }} was installed as release {{ .Release.Name }} in namespace {{ .Release.Namespace }}.
+
+The controller image is {{ include "brunernetes.image" . }} and one replica is running.
+Only the BrunerApp controller is active in this release. Togliatti, AvtoVAZ and
+Konveer are declared resources that brunerctl reads directly; their controllers
+arrive in v0.2.
+
+Check that the controller reached a ready state:
+
+  kubectl -n {{ .Release.Namespace }} rollout status deployment/{{ include "brunernetes.fullname" . }}
+
+Look at the factory:
+
+  brunerctl status
+  brunerctl factory status
+
+Deploy an application:
+
+  brunerctl app deploy -f demo/manifests/brunerapp.yaml
+  brunerctl app inspect factory-showroom -n brunernetes-demo
+  curl http://127.0.0.1:30080/healthz
+
+Applications are published on the loopback address of this host only. There is
+no ingress and no NodePort: nothing is reachable from outside the machine.
+
+If something is wrong, the first command to run is:
+
+  brunerctl diagnose

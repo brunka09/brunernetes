@@ -1,0 +1,15 @@
+# Build output
+/bin/
+/hack/tools/bin/
+cover.out
+*.test
+
+# Editors
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Local state
+kubeconfig
+*.local.yaml

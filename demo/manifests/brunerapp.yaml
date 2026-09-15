@@ -1,0 +1,40 @@
+# Factory Showroom - the single demo application of Brunernetes.
+#
+# The BrunerApp reconciler creates and owns one Deployment and one ClusterIP
+# Service in this namespace, applies the factory probe and resource defaults,
+# and publishes the application on the loopback interface through a
+# hostIP/hostPort binding served by the CNI portmap plugin. There is no
+# NodePort and no ingress: the application is reachable from this host only.
+#
+# The image is built out of band from demo/factory-showroom (Brunernetes never
+# builds images):
+#
+#   cd demo/factory-showroom && docker build -t factory-showroom:0.1.0 .
+#
+# Deploy and verify:
+#
+#   kubectl apply -f demo/manifests/namespace.yaml
+#   brunerctl app deploy -f demo/manifests/brunerapp.yaml
+#   curl -fsS http://127.0.0.1:30080/healthz
+apiVersion: bruner.dev/v1alpha1
+kind: BrunerApp
+metadata:
+  name: factory-showroom
+  namespace: brunernetes-demo
+spec:
+  image: factory-showroom:0.1.0
+  # The image is built locally and not pushed to a registry, so the kubelet
+  # must not try to pull it.
+  imagePullPolicy: IfNotPresent
+  replicas: 1
+  port: 8080
+  healthPath: /healthz
+  mode:
+    profile: showroom
+    rollout: steady
+    qualityGate: practical
+    shift: day
+  localExposure:
+    enabled: true
+    hostIP: 127.0.0.1
+    hostPort: 30080

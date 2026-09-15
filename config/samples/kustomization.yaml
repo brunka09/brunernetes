@@ -1,0 +1,21 @@
+# One valid sample per Brunernetes kind.
+#
+# Applying all four at once creates the cluster-scoped factory environment and
+# policy plus one application and one delivery in the "default" namespace:
+#
+#   kubectl apply -k config/samples/
+#
+# The CRDs must exist first; they are installed by the Helm chart during
+# `brunerctl install`, or directly with
+# `kubectl apply -f config/crd/bases/`.
+#
+# Note the ordering: Togliatti and AvtoVAZ are cluster-scoped and carry no
+# reconciler in v0.1, BrunerApp is the only kind with a controller, and the
+# Konveer delivery targets the BrunerApp created by the sample above it.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - bruner.dev_v1alpha1_togliatti.yaml
+  - bruner.dev_v1alpha1_avtovaz.yaml
+  - bruner.dev_v1alpha1_brunerapp.yaml
+  - bruner.dev_v1alpha1_konveer.yaml

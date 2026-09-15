@@ -1,0 +1,266 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.17.2
+  name: avtovazs.bruner.dev
+spec:
+  group: bruner.dev
+  names:
+    categories:
+    - brunernetes
+    kind: AvtoVAZ
+    listKind: AvtoVAZList
+    plural: avtovazs
+    shortNames:
+    - vaz
+    singular: avtovaz
+  scope: Cluster
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.effectiveMode.profile
+      name: Profile
+      type: string
+    - jsonPath: .status.effectiveMode.qualityGate
+      name: Quality gate
+      type: string
+    - jsonPath: .status.applicationCount
+      name: Apps
+      type: string
+    - jsonPath: .status.maxApplications
+      name: Max apps
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: |-
+          AvtoVAZ is the factory-wide configuration and policy resource. It defines the
+          default operating mode and the safety and quality rules every application in
+          the factory is measured against.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: AvtoVAZSpec describes factory-wide configuration and policy.
+            properties:
+              defaultMode:
+                description: |-
+                  DefaultMode is the operating mode inherited by every application that
+                  does not set its own mode fields.
+                properties:
+                  profile:
+                    description: Profile selects the operating profile.
+                    enum:
+                    - garage
+                    - showroom
+                    - strict
+                    - friday
+                    type: string
+                  qualityGate:
+                    description: QualityGate selects how strictly quality checks are
+                      enforced.
+                    enum:
+                    - practical
+                    - strict
+                    type: string
+                  rollout:
+                    description: Rollout selects the rollout strategy. Only "steady"
+                      is supported.
+                    enum:
+                    - steady
+                    type: string
+                  shift:
+                    description: Shift selects the working shift.
+                    enum:
+                    - day
+                    - night
+                    type: string
+                type: object
+              factoryRef:
+                default: togliatti
+                description: FactoryRef is the name of the Togliatti resource this
+                  policy applies to.
+                type: string
+              policy:
+                description: Policy is the factory safety and quality policy.
+                properties:
+                  allowPublicExposure:
+                    default: false
+                    description: |-
+                      AllowPublicExposure is always false in the MVP and exists to make the
+                      localhost-only guarantee explicit and auditable.
+                    enum:
+                    - false
+                    type: boolean
+                  allowedRegistries:
+                    description: |-
+                      AllowedRegistries restricts image references to the listed registry
+                      prefixes. An empty list allows any registry.
+                    items:
+                      type: string
+                    type: array
+                  latestTagPolicy:
+                    default: Warn
+                    description: LatestTagPolicy describes how a mutable ":latest"
+                      image tag is handled.
+                    enum:
+                    - Ignore
+                    - Warn
+                    - Reject
+                    type: string
+                  maxApplications:
+                    default: 1
+                    description: |-
+                      MaxApplications is the maximum number of BrunerApp resources allowed in
+                      the cluster. The MVP supports exactly one application.
+                    format: int32
+                    maximum: 1
+                    minimum: 1
+                    type: integer
+                  requireReadinessProbe:
+                    default: false
+                    description: |-
+                      RequireReadinessProbe rejects or warns about applications without a
+                      readiness probe, depending on the active quality gate.
+                    type: boolean
+                  requireResourceRequests:
+                    default: false
+                    description: |-
+                      RequireResourceRequests rejects or warns about applications without CPU
+                      and memory requests, depending on the active quality gate.
+                    type: boolean
+                type: object
+            type: object
+          status:
+            description: AvtoVAZStatus reports the observed policy state.
+            properties:
+              applicationCount:
+                description: ApplicationCount is the number of BrunerApp resources
+                  observed.
+                format: int32
+                type: integer
+              conditions:
+                description: Conditions maintains PolicyEnforced and CapacityRespected.
+                items:
+                  description: Condition contains details for one aspect of the current
+                    state of this API Resource.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        lastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        message is a human readable message indicating details about the transition.
+                        This may be an empty string.
+                      maxLength: 32768
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        observedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      description: |-
+                        reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                        Producers of specific condition types may define expected values and meanings for this field,
+                        and whether the values are considered a guaranteed API.
+                        The value should be a CamelCase string.
+                        This field may not be empty.
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
+              effectiveMode:
+                description: EffectiveMode is the fully defaulted factory mode.
+                properties:
+                  profile:
+                    description: Profile selects the operating profile.
+                    enum:
+                    - garage
+                    - showroom
+                    - strict
+                    - friday
+                    type: string
+                  qualityGate:
+                    description: QualityGate selects how strictly quality checks are
+                      enforced.
+                    enum:
+                    - practical
+                    - strict
+                    type: string
+                  rollout:
+                    description: Rollout selects the rollout strategy. Only "steady"
+                      is supported.
+                    enum:
+                    - steady
+                    type: string
+                  shift:
+                    description: Shift selects the working shift.
+                    enum:
+                    - day
+                    - night
+                    type: string
+                type: object
+              maxApplications:
+                description: MaxApplications is the enforced application limit.
+                format: int32
+                type: integer
+              observedGeneration:
+                description: ObservedGeneration is the spec generation the status
+                  refers to.
+                format: int64
+                type: integer
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

@@ -1,0 +1,74 @@
+# BrunerApp - the one web application the factory runs (namespaced).
+#
+# What this does: it describes an already-built container image to run. The
+# BrunerApp reconciler - the only controller implemented in v0.1 - creates and
+# owns one Deployment and one ClusterIP Service, applies probe and resource
+# defaults, evaluates AvtoVAZ policy, and publishes the application on the
+# loopback interface only. The product coming off the line.
+#
+# Brunernetes never builds images. Build and push the image out of band, then
+# reference it here.
+#
+# Apply it with:
+#   brunerctl app deploy -f config/samples/bruner.dev_v1alpha1_brunerapp.yaml
+apiVersion: bruner.dev/v1alpha1
+kind: BrunerApp
+metadata:
+  name: factory-showroom
+  namespace: default
+spec:
+  # Required. An immutable tag or a sha256 digest keeps the rollout
+  # reproducible; a mutable tag raises a PolicyWarning under the default
+  # latestTagPolicy: Warn.
+  image: factory-showroom:0.1.0
+  imagePullPolicy: IfNotPresent
+  # 0-5 replicas. One node, one small application.
+  replicas: 1
+  # Container port serving HTTP. Defaults to 8080.
+  port: 8080
+  # Probe path used by the generated readiness and liveness probes.
+  healthPath: /healthz
+  # Overrides the AvtoVAZ default mode field by field. Unset fields are
+  # inherited.
+  mode:
+    profile: showroom
+    rollout: steady
+    qualityGate: practical
+    shift: day
+  # ClusterIP Service is always created. localExposure adds a hostIP/hostPort
+  # binding on the loopback interface via the CNI portmap plugin. A
+  # non-loopback hostIP is replaced with 127.0.0.1 and reported as a warning.
+  localExposure:
+    enabled: true
+    hostIP: 127.0.0.1
+    hostPort: 30080
+  # Only the values given here are kept; the rest are filled with the factory
+  # defaults 50m/64Mi requests and 500m/256Mi limits.
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+  # Explicit probes. Omit them to get the factory defaults: readiness
+  # 2/5/2/1/3 and liveness 10/20/3/1/5 against healthPath.
+  readinessProbe:
+    httpGet:
+      path: /healthz
+      port: 8080
+    initialDelaySeconds: 2
+    periodSeconds: 5
+    timeoutSeconds: 2
+    successThreshold: 1
+    failureThreshold: 3
+  env:
+    - name: SHOWROOM_STAGE
+      value: "Showroom"
+  # spec.override is only needed under profile friday, which holds an image
+  # change until a human approves it:
+  #
+  # override:
+  #   approved: true
+  #   image: factory-showroom:0.1.0
+  #   reason: "Approved by the shift lead before the weekend."

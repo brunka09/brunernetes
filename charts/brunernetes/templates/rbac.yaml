@@ -1,0 +1,91 @@
+{{- if .Values.rbac.create }}
+# The controller watches BrunerApp resources in every namespace and owns the
+# Deployment and Service of each application, so it needs a ClusterRole.
+# The rules mirror config/rbac/role.yaml, which is generated from the
+# kubebuilder markers in internal/controller.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "brunernetes.fullname" . }}-manager
+  labels:
+    {{- include "brunernetes.labels" . | nindent 4 }}
+rules:
+  - apiGroups: ["bruner.dev"]
+    resources: ["brunerapps"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["bruner.dev"]
+    resources: ["brunerapps/status"]
+    verbs: ["get", "update", "patch"]
+  - apiGroups: ["bruner.dev"]
+    resources: ["brunerapps/finalizers"]
+    verbs: ["update"]
+  - apiGroups: ["bruner.dev"]
+    resources: ["avtovazs", "togliattis", "konveers"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["bruner.dev"]
+    resources: ["avtovazs/status", "togliattis/status", "konveers/status"]
+    verbs: ["get", "update", "patch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "brunernetes.fullname" . }}-manager
+  labels:
+    {{- include "brunernetes.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "brunernetes.fullname" . }}-manager
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "brunernetes.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+---
+# Leader election is disabled by default, but the Role is created anyway so the
+# setting can be switched on without a chart upgrade.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "brunernetes.fullname" . }}-leader-election
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "brunernetes.labels" . | nindent 4 }}
+rules:
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "brunernetes.fullname" . }}-leader-election
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "brunernetes.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "brunernetes.fullname" . }}-leader-election
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "brunernetes.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+{{- end }}

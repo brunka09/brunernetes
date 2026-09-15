@@ -1,0 +1,42 @@
+# AvtoVAZ - factory-wide configuration and policy (cluster-scoped).
+#
+# What this does: it sets the default BrunerMode that every application
+# inherits when it does not set its own, and the safety and quality rules each
+# application is measured against. The plant management office: it does not
+# assemble anything, it decides how assembly is allowed to happen.
+#
+# Implementation status: no AvtoVAZ reconciler exists in v0.1, so this resource
+# has no status of its own. It is read by the BrunerApp reconciler, which merges
+# spec.defaultMode with the application mode and evaluates spec.policy on every
+# reconcile (internal/factory/policy.go).
+#
+# This sample matches what `brunerctl install --preset garage` applies.
+apiVersion: bruner.dev/v1alpha1
+kind: AvtoVAZ
+metadata:
+  name: avtovaz
+spec:
+  # Name of the Togliatti resource this policy applies to.
+  factoryRef: togliatti
+  # Mode inherited by every application that leaves a field unset. An
+  # application's own spec.mode wins field by field.
+  defaultMode:
+    profile: garage
+    rollout: steady
+    qualityGate: practical
+    shift: day
+  policy:
+    # Under qualityGate practical these two requirements produce a
+    # PolicyWarning condition. Under profile strict or qualityGate strict they
+    # block the rollout.
+    requireReadinessProbe: false
+    requireResourceRequests: false
+    # How a mutable tag such as ":latest" is handled: Ignore, Warn or Reject.
+    latestTagPolicy: Warn
+    # The MVP supports exactly one application; 1 is the only accepted value.
+    maxApplications: 1
+    # Empty list allows any registry. A non-empty list is always blocking.
+    allowedRegistries: []
+    # Always false. The field exists to make the localhost-only guarantee
+    # explicit and auditable; true is not an accepted value.
+    allowPublicExposure: false

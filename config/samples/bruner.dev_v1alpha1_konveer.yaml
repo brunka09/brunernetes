@@ -1,0 +1,63 @@
+# Konveer - a delivery workflow for an image that already exists (namespaced).
+#
+# What this does: it validates an image reference and the factory policy,
+# applies the image to the referenced BrunerApp, waits for the Deployment
+# rollout and for readiness, and then verifies the loopback endpoint. The
+# conveyor that moves a finished part onto the line; it never manufactures one.
+#
+# Brunernetes never builds container images. Konveer only delivers a reference.
+#
+# Implementation status: no Konveer reconciler exists in v0.1. The four stages
+# are executed client-side by `brunerctl konveer apply`, which writes the same
+# phase, stages and conditions into status. Moving this into a controller is
+# v0.2 work (docs/roadmap.md).
+#
+# Apply it with:
+#   brunerctl konveer apply -f config/samples/bruner.dev_v1alpha1_konveer.yaml
+apiVersion: bruner.dev/v1alpha1
+kind: Konveer
+metadata:
+  name: factory-showroom-delivery
+  namespace: default
+spec:
+  # Required. The BrunerApp in the same namespace this delivery targets. It is
+  # created when it does not exist.
+  appRef: factory-showroom
+  # Required. The already-built image reference to deliver.
+  image: factory-showroom:0.1.0
+  # Optional BrunerApp fields applied together with the image. Fields left out
+  # keep their current value on the BrunerApp.
+  appTemplate:
+    replicas: 1
+    port: 8080
+    healthPath: /healthz
+    mode:
+      profile: showroom
+      rollout: steady
+      qualityGate: practical
+      shift: day
+    localExposure:
+      enabled: true
+      hostIP: 127.0.0.1
+      hostPort: 30080
+  # Which checks run before the image is applied.
+  checks:
+    imageReference: true
+    policy: true
+    capacity: true
+  # Bounds for the waiting stages, in seconds.
+  timeouts:
+    rolloutSeconds: 300
+    readinessSeconds: 180
+  # Post-rollout endpoint check. It is skipped, not failed, when the loopback
+  # endpoint of the node cannot be reached.
+  verify:
+    enabled: true
+    path: /healthz
+    expectedStatus: 200
+  # spec.override is only needed under profile friday:
+  #
+  # override:
+  #   approved: true
+  #   image: factory-showroom:0.1.0
+  #   reason: "Approved by the shift lead before the weekend."

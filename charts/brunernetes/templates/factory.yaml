@@ -1,0 +1,32 @@
+{{- if .Values.factory.togliatti.create }}
+# The cluster-scoped description of the single node. brunerctl install applies
+# this itself, so the chart only creates it when it is asked to.
+apiVersion: bruner.dev/v1alpha1
+kind: Togliatti
+metadata:
+  name: {{ .Values.factory.togliatti.name }}
+  labels:
+    {{- include "brunernetes.labels" . | nindent 4 }}
+spec:
+  capacityProfile: {{ .Values.factory.togliatti.capacityProfile }}
+{{- end }}
+{{- if .Values.factory.avtovaz.create }}
+---
+# The cluster-scoped factory policy: the default operating mode every
+# application inherits unless it sets its own.
+apiVersion: bruner.dev/v1alpha1
+kind: AvtoVAZ
+metadata:
+  name: {{ .Values.factory.avtovaz.name }}
+  labels:
+    {{- include "brunernetes.labels" . | nindent 4 }}
+spec:
+  defaultMode:
+    profile: {{ .Values.factory.avtovaz.profile }}
+    rollout: steady
+    qualityGate: {{ .Values.factory.avtovaz.qualityGate }}
+    shift: {{ .Values.factory.avtovaz.shift }}
+  policy:
+    maxApplications: 1
+    allowPublicExposure: false
+{{- end }}
